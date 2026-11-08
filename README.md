@@ -11,7 +11,7 @@ The top screen shows the letter, its sound and your grade. You write on the bott
 ## Modes
 
 - **TRACE**: write over a faint copy of the letter.
-- **GHOST**: the outline is barely visible. If the letter has stroke data, numbered start dots show where each stroke begins.
+- **GHOST**: the outline is barely visible, but numbered start dots still show where each stroke begins.
 - **FREE WRITE**: copy the letter from the top screen onto blank paper. Size and position don't matter, because your writing is rescaled before it's scored.
 - **RECALL**: you hear the sound and see the romanization and a hint, and write the letter from memory. The letter stays hidden until you check.
 - **STROKE LAB**: record the stroke order for each letter (see below).
@@ -31,16 +31,26 @@ After you check, the top screen draws your writing over the correct letter so yo
 
 ## Stroke order
 
-There's no open dataset of Gujarati stroke order (nothing like KanjiVG for Japanese), so the game includes a tool for recording it:
+Kalam DS ships with stroke order and direction for **46 letters** (129 strokes): every vowel and consonant in the chart except ઋ, ઙ and ઞ. For those letters:
 
-1. Open **STROKE LAB** and pick a letter with ◀ ▶.
-2. Draw each stroke in the order and direction it's written, then **SAVE**. Saving with nothing drawn deletes the letter's recording.
-3. That letter then gets:
-   - an **ORDER** animation on the top screen (X)
-   - numbered start dots in TRACE and GHOST
-   - stroke checks when you're graded: wrong stroke count, a stroke drawn backwards, or a stroke starting in the wrong place
+- the top screen shows an animated **ORDER** demo (X)
+- TRACE and GHOST show numbered start dots with direction ticks
+- grading checks stroke count and flags strokes drawn backwards or started in the wrong place
 
-Recordings are saved in localStorage. **DATA** shows them as JSON, with COPY and IMPORT buttons. To ship them with the game, paste the JSON into the `BUILTIN` constant near the top of the script in `index.html`.
+The order and direction were transcribed from the [iknowmyabc.com](https://www.iknowmyabc.com) Gujarati tracing worksheets. The paths were traced from the worksheet arrows and refitted onto Noto Sans Gujarati. See [`tools/strokes`](tools/strokes) for the pipeline.
+
+### Stroke data for other projects
+
+[`strokes/gujarati.json`](strokes/gujarati.json) is a standalone dataset, MIT licensed like the rest of the repo. Each letter is a list of strokes in writing order, and each stroke is an `[x, y]` polyline from start to end on a 192×192 pad, laid out with Noto Sans Gujarati. One-point strokes are dots. The game embeds the same data as `BUILTIN` in `index.html`.
+
+### Stroke Lab
+
+Use **STROKE LAB** to record the missing letters (ઋ, ઙ, ઞ, numerals) or to override a built-in letter:
+
+1. Pick a letter with < >.
+2. Draw each stroke in order and direction, then **SAVE**. Saving with nothing drawn deletes your recording, and the built-in strokes come back.
+
+Recordings are saved in localStorage. **DATA** shows them as JSON, with COPY and IMPORT buttons. To contribute strokes, add them to `strokes/gujarati.json` and to `BUILTIN` in `index.html`.
 
 ## Controls
 

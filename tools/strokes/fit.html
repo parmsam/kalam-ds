@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@500;800&display=swap" rel="stylesheet">
+</head><body><script>
+/* Same glyph layout as Kalam DS (lay() in index.html). */
+const PAD=192,GF='"Noto Sans Gujarati","Gujarati Sangam MN","Gujarati MT","Shruti","Nirmala UI",sans-serif';
+const mc=document.createElement('canvas').getContext('2d');
+function lay(g){
+  mc.font='500 100px '+GF;
+  const m=mc.measureText(g),L=m.actualBoundingBoxLeft,R=m.actualBoundingBoxRight,A=m.actualBoundingBoxAscent,D=m.actualBoundingBoxDescent;
+  const k=Math.min(130/(L+R||1),130/(A+D||1),1.7),size=100*k;
+  const x=PAD/2-(R-L)*k/2,y=PAD/2+(A-D)*k/2;
+  return {size,x,y,b:{x0:x-L*k,x1:x+R*k,y0:y-A*k,y1:y+D*k}};
+}
+const SC=4,N=PAD*SC;  // fit on a 4x raster for precision
+function glyphMask(g){
+  const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');
+  const l=lay(g);x.scale(SC,SC);x.fillStyle='#000';x.font=`500 ${l.size}px ${GF}`;x.fillText(g,l.x,l.y);
+  const d=x.getImageData(0,0,N,N).data,m=new Uint8Array(N*N);for(let i=0;i<N*N;i++)m[i]=d[i*4+3]>127;
+  // distance-to-edge inside the glyph (chamfer), so centre lines score highest
+  const D=new Float32Array(N*N);for(let i=0;i<N*N;i++)D[i]=m[i]?1e9:0;
+  for(let y=0;y<N;y++)for(let x2=0;x2<N;x2++){const i=y*N+x2;if(!D[i])continue;let v=D[i];if(x2>0)v=Math.min(v,D[i-1]+1);if(y>0)v=Math.min(v,D[i-N]+1);if(x2>0&&y>0)v=Math.min(v,D[i-N-1]+1.414);if(x2<N-1&&y>0)v=Math.min(v,D[i-N+1]+1.414);D[i]=v}
+  for(let y=N-1;y>=0;y--)for(let x2=N-1;x2>=0;x2--){const i=y*N+x2;if(!D[i])continue;let v=D[i];if(x2<N-1)v=Math.min(v,D[i+1]+1);if(y<N-1)v=Math.min(v,D[i+N]+1);if(x2<N-1&&y<N-1)v=Math.min(v,D[i+N+1]+1.414);if(x2>0&&y<N-1)v=Math.min(v,D[i+N-1]+1.414);D[i]=v}
+  return {D,l};
+}
+window.fitAll=async(data)=>{
+  await document.fonts.load('500 100px "Noto Sans Gujarati"',Object.keys(data).join(''));
+  const out={},stats={};
+  for(const [g,r] of Object.entries(data)){
+    const {D,l}=glyphMask(g);
+    const pts=r.strokes.flatMap(s=>s.pts);
+    const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+    const sx0=Math.min(...xs),sx1=Math.max(...xs),sy0=Math.min(...ys),sy1=Math.max(...ys);
+    // centre lines sit inside the glyph by ~half a stem: shrink the glyph box a little for the first guess
+    const gb=l.b,inset=4;
+    const s0=Math.min((gb.x1-gb.x0-2*inset)/(sx1-sx0||1),(gb.y1-gb.y0-2*inset)/(sy1-sy0||1));
+    const cx=(sx0+sx1)/2,cy=(sy0+sy1)/2,gx=(gb.x0+gb.x1)/2,gy=(gb.y0+gb.y1)/2;
+    const sample=pts.filter((_,i)=>i%2===0);
+    const score=(s,a,tx,ty)=>{let t=0,out=0;for(const [x,y] of sample){const X=Math.round(((x-cx)*s*a+gx+tx)*SC),Y=Math.round(((y-cy)*s/a+gy+ty)*SC);
+      if(X<0||Y<0||X>=N||Y>=N){out++;continue}const v=D[Y*N+X];if(!v)out++;t+=Math.min(v,10)}return t/sample.length-out*40/sample.length};
+    let best={v:-1e9};
+    for(let s=s0*.8;s<=s0*1.25;s+=s0*.025)for(let a=.9;a<=1.101;a+=.05)for(let tx=-16;tx<=16;tx+=2)for(let ty=-16;ty<=16;ty+=2){
+      const v=score(s,a,tx,ty);if(v>best.v)best={v,s,a,tx,ty}}
+    // refine
+    let {s,a,tx,ty}=best;
+    for(let ds=-.02;ds<=.0201;ds+=.005)for(let da=-.03;da<=.031;da+=.01)for(let dx=-2;dx<=2;dx+=.5)for(let dy=-2;dy<=2;dy+=.5){
+      const v=score(s*(1+ds),a+da,tx+dx,ty+dy);if(v>best.v)best={v,s:s*(1+ds),a:a+da,tx:tx+dx,ty:ty+dy}}
+    const T=([x,y])=>[((x-cx)*best.s*best.a+gx+best.tx),((y-cy)*best.s/best.a+gy+best.ty)];
+    let inside=0;for(const p of pts){const [X,Y]=T(p).map(v=>Math.round(v*SC));if(X>=0&&Y>=0&&X<N&&Y<N&&D[Y*N+X])inside++}
+    out[g]=r.strokes.map(st=>st.pts.map(T));
+    stats[g]={inside:+(inside/pts.length).toFixed(3),s:+best.s.toFixed(4),a:+best.a.toFixed(3)};
+  }
+  return {out,stats};
+};
+</script></body></html>
