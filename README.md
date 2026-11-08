@@ -11,7 +11,7 @@ The top screen shows the letter, its sound and your grade. You write on the bott
 ## Modes
 
 - **TRACE**: write over a faint copy of the letter.
-- **GHOST**: the outline is barely visible, but numbered start dots still show where each stroke begins.
+- **GHOST**: the outline is barely visible, with sparser direction arrows.
 - **FREE WRITE**: copy the letter from the top screen onto blank paper. Size and position don't matter, because your writing is rescaled before it's scored.
 - **RECALL**: you hear the sound and see the romanization and a hint, and write the letter from memory. The letter stays hidden until you check.
 - **STROKE LAB**: record the stroke order for each letter (see below).
@@ -31,11 +31,12 @@ After you check, the top screen draws your writing over the correct letter so yo
 
 ## Stroke order
 
-Kalam DS ships with stroke order and direction for **46 letters** (129 strokes): every vowel and consonant in the chart except ઋ, ઙ and ઞ. For those letters:
+Kalam DS ships with writing direction for **46 letters**: every vowel and consonant in the chart except ઋ, ઙ and ઞ. For those letters:
 
-- the top screen shows an animated **ORDER** demo (X)
-- TRACE and GHOST show numbered start dots with direction ticks
-- grading checks stroke count and flags strokes drawn backwards or started in the wrong place
+- the top screen shows an animated **ORDER** demo of how the letter is written (X)
+- TRACE and GHOST show arrows along the letter, so you can see where to start and which way to go
+
+The direction is guidance only. Grading looks at shape alone and never counts or checks strokes, because people write the same letter with different numbers of pen lifts.
 
 The order and direction were transcribed from the [iknowmyabc.com](https://www.iknowmyabc.com) Gujarati tracing worksheets. The paths were traced from the worksheet arrows and refitted onto Noto Sans Gujarati. See [`tools/strokes`](tools/strokes) for the pipeline.
 
@@ -50,7 +51,7 @@ Use **STROKE LAB** to record the missing letters (ઋ, ઙ, ઞ, numerals) or to
 1. Pick a letter with < >.
 2. Draw each stroke in order and direction, then **SAVE**. Saving with nothing drawn deletes your recording, and the built-in strokes come back.
 
-Recordings are saved in localStorage. **DATA** shows them as JSON, with COPY and IMPORT buttons. To contribute strokes, add them to `strokes/gujarati.json` and to `BUILTIN` in `index.html`.
+Recordings are saved in localStorage (a letter's strokes in Stroke Lab are just the paths the arrows and animation follow). **DATA** shows them as JSON, with COPY and IMPORT buttons. To contribute strokes, add them to `strokes/gujarati.json` and to `BUILTIN` in `index.html`.
 
 ## Controls
 

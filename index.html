@@ -229,7 +229,7 @@ textarea.data{flex:1;width:100%;resize:none;background:var(--g2);color:var(--g0)
     <tr><td><kbd>Shift</kbd> <kbd>H</kbd></td><td>SELECT · hear it</td></tr>
     <tr><td><kbd>Enter</kbd></td><td>START · random 10</td></tr>
   </table>
-  <p class="modes"><b>TRACE</b> write over the letter · <b>GHOST</b> faint outline only · <b>FREE</b> copy it at any size · <b>RECALL</b> hear it, write from memory · <b>STROKE LAB</b> record stroke order. RANDOM 10 favors your weak letters.</p>
+  <p class="modes"><b>TRACE</b> write over the letter · <b>GHOST</b> faint outline only · <b>FREE</b> copy it at any size · <b>RECALL</b> hear it, write from memory · <b>STROKE LAB</b> record writing direction. RANDOM 10 favors your weak letters.</p>
   <p>Tip: Gujarati has no top line (shirorekha) — don't draw a bar across the top like Hindi.</p>
   <p style="font-size:17px">Vibe coded with <a href="https://claude.ai">Claude</a> · <a href="https://github.com/parmsam/kalam-ds">source on GitHub</a></p>
 </div>
@@ -377,6 +377,21 @@ function ink(x,strokes,color,w,upto){
   strokes.forEach(s=>{if(!s.length)return;x.beginPath();x.moveTo(s[0][0],s[0][1]);if(s.length===1)x.lineTo(s[0][0]+.1,s[0][1]);else for(let i=1;i<s.length;i++)x.lineTo(s[i][0],s[i][1]);x.stroke()});
   x.restore();
 }
+function arrows(x,strokes,color,gap=26){
+  x.save();x.fillStyle=color;x.strokeStyle=color;x.lineCap=x.lineJoin='round';
+  const head=(p,a,sz)=>{x.beginPath();x.moveTo(p[0]+Math.cos(a)*sz,p[1]+Math.sin(a)*sz);x.lineTo(p[0]+Math.cos(a+2.5)*sz,p[1]+Math.sin(a+2.5)*sz);x.lineTo(p[0]+Math.cos(a-2.5)*sz,p[1]+Math.sin(a-2.5)*sz);x.closePath();x.fill()};
+  strokes.forEach(s=>{
+    x.beginPath();x.arc(s[0][0],s[0][1],4,0,7);x.fill();
+    if(s.length<2)return;
+    let d=0,next=gap*.7;
+    for(let i=1;i<s.length;i++){const a=s[i-1],b=s[i],sd=dist(a,b);
+      while(d+sd>=next&&next<pathLen(s)-gap*.45){const t=(next-d)/sd,p=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];head(p,Math.atan2(b[1]-a[1],b[0]-a[0]),4.5);next+=gap}
+      d+=sd}
+    const e=s.at(-1),f=s[Math.max(0,s.length-3)];head(e,Math.atan2(e[1]-f[1],e[0]-f[0]),6);
+  });
+  x.restore();
+}
+const pathLen=s=>{let d=0;for(let i=1;i<s.length;i++)d+=dist(s[i-1],s[i]);return d};
 function dots(x,strokes,color,r=6.5){
   strokes.forEach((s,i)=>{const[p,q]=s[0];x.save();x.fillStyle=color;x.beginPath();x.arc(p,q,r,0,7);x.fill();
     if(s.length>3){const j=Math.min(s.length-1,6),a=Math.atan2(s[j][1]-q,s[j][0]-p);x.strokeStyle=color;x.lineWidth=2;x.beginPath();x.moveTo(p+Math.cos(a)*r,q+Math.sin(a)*r);x.lineTo(p+Math.cos(a)*(r+7),q+Math.sin(a)*(r+7));x.stroke()}
@@ -431,7 +446,7 @@ function evaluate(g,strokes,norm){
     const Pr=u?ui/u:0,Rc=gc?gi/gc:0,B2=.36,F=Pr+Rc?(1+B2)*Pr*Rc/(B2*Pr+Rc):0;
     if(!bestR||F>bestR.F)bestR={F,P:Pr,R:Rc,strokes:ts};
   }
-  const rec=strokesOf(g),iss=[];
+  const rec=null,iss=[];  /* stroke order is shown as guidance only, never graded */
   if(rec){
     const us=bestR.strokes;
     if(us.length!==rec.length)iss.push(`${us.length} STROKES, NOT ${rec.length}`);
@@ -453,10 +468,10 @@ const $=id=>document.getElementById(id);
 const tv=$('tv'),bv=$('bv');
 const MODES=[
   {k:'trace',n:'TRACE',d:'Write over the letter. Learn its shape.',hint:'GUIDED'},
-  {k:'ghost',n:'GHOST',d:'Only a faint outline and start dots.',hint:'LESS HELP'},
+  {k:'ghost',n:'GHOST',d:'Only a faint outline and direction arrows.',hint:'LESS HELP'},
   {k:'free',n:'FREE WRITE',d:'Copy the top screen onto blank paper.',hint:'ANY SIZE'},
   {k:'recall',n:'RECALL',d:'Hear the sound, write it from memory.',hint:'NO PEEKING'},
-  {k:'lab',n:'STROKE LAB',d:'Record the stroke order for each letter. Unlocks ORDER animations and stroke checks.',hint:'TOOL'},
+  {k:'lab',n:'STROKE LAB',d:'Record how a letter is written. Adds direction arrows and the ORDER animation.',hint:'TOOL'},
   {k:'help',n:'HOW TO PLAY',d:'Modes, scoring, stroke order and controls.',hint:'?'},
 ];
 const NM=MODES.length+2; /* menu rows: modes + SET + SOUND */
@@ -464,7 +479,7 @@ const HELP=[
   ['THE GAME',`<div>Write each letter on the <b>BOTTOM</b> paper screen. The <b>TOP</b> screen shows the letter, its sound and your grade.</div><div>Gujarati has no top line (shirorekha) — don't draw a bar across the top like Hindi.</div>`],
   ['MODES',`<div><b>TRACE</b>write over the letter</div><div><b>GHOST</b>faint outline only</div><div><b>FREE</b>copy it, any size</div><div><b>RECALL</b>hear it, write from memory</div>`],
   ['SCORING',`<div>Your ink is compared with the letter's shape. <b>ON SHAPE</b> = ink on the letter. <b>COVERED</b> = how much of the letter you drew.</div><div>★ 60+ · ★★ 75+ · ★★★ 90+. FREE or RECALL at 75+ masters a letter.</div>`],
-  ['STROKE ORDER',`<div>46 letters come with stroke order: press <b>X</b> to watch it. Numbered dots show where each stroke starts, and your strokes are checked.</div><div>Record ઋ ઙ ઞ and numbers in <b>STROKE LAB</b>.</div>`],
+  ['STROKE ORDER',`<div>46 letters show how they're written: arrows in TRACE and GHOST, and <b>X</b> plays an animation. Only the shape is scored — write it your way.</div><div>Record ઋ ઙ ઞ and numbers in <b>STROKE LAB</b>.</div>`],
   ['CONTROLS',`<div><b>A</b>check · next  <b>B</b>back</div><div><b>Y</b>clear  <b>X</b>watch order</div><div><b>&lt;&gt;</b>change letter</div><div><b>SELECT</b>hear  <b>START</b>random 10</div>`],
 ];
 const S={scr:'boot',power:true,hp:0,mi:0,pi:0,mode:'trace',q:[],qi:0,strokes:[],res:null,sess:{},li:0};
@@ -537,12 +552,12 @@ const R={
       const [gname,st]=grade(r.score),pz=st>=2?PRAISE[Math.random()*3|0]:null;
       info=`<div class="grade">${r.score} ${gname}</div><div class="stars">${starStr(st)}</div>
         ${pz?`<div class="prz"><span class="gu">${pz[0]}</span> ${pz[1]}!</div>`:''}
-        <div class="iss">${r.issues.length?r.issues.slice(0,2).join('<br>'):rec?'STROKE ORDER ✓':'NO STROKE DATA YET'}</div>
+        <div class="iss">${rec?'X = WATCH HOW IT IS WRITTEN':''}</div>
         <div class="iss">ON SHAPE ${Math.round(r.P*100)}% · COVERED ${Math.round(r.R*100)}%</div>`;
     }else{
       info=`<div class="rom">${l.r}</div><div class="hint">${l.h}</div>
         ${l.w?`<div class="ex">as in ${hideGlyph?'':`<span class="gu" style="font-size:5.4cqw">${l.w}</span> `}<i>${l.wr}</i> · ${l.m}</div>`:''}
-        ${S.mode==='recall'?'<div class="iss">SELECT = HEAR AGAIN</div>':rec?'<div class="iss">X = WATCH STROKE ORDER</div>':''}`;
+        ${S.mode==='recall'?'<div class="iss">SELECT = HEAR AGAIN</div>':rec?'<div class="iss">X = WATCH HOW TO WRITE IT</div>':''}`;
     }
     const done=Object.keys(S.sess).length;
     const tools=r?[['next','NEXT &gt;','A',1],['retry','RETRY','Y'],['hear','HEAR','SEL'],['watch','ORDER','X'],['back','LETTERS','B']]
@@ -560,7 +575,7 @@ const R={
       top:`<div class="v"><div class="hdr"><span>STROKE LAB</span><span>${S.li+1}/${ALL.length}</span></div>
         <div class="body"><canvas class="tc" id="tc"></canvas><div class="info"><div class="rom">${l.r}</div>
         <div class="hint">${rec?`saved: ${rec.length} stroke${rec.length>1?'s':''}${REC[l.g]?'':' (built-in)'}`:'not recorded yet'}</div>
-        <div class="iss">DRAW EACH STROKE IN ORDER, IN THE DIRECTION YOU WRITE IT. SAVE WITH A. AN EMPTY SAVE DELETES.</div>
+        <div class="iss">DRAW THE LETTER THE WAY YOU WRITE IT. SAVE WITH A. AN EMPTY SAVE DELETES.</div>
         <div class="iss">${n} RECORDED HERE</div></div></div></div>`,
       bot:`<div class="pad"><canvas id="pc"></canvas><div class="tools">
         <div class="bt pri" data-act="lsave">SAVE<span class="k">A</span></div><div class="bt" data-act="undo">UNDO<span class="k">BKSP</span></div>
@@ -609,10 +624,10 @@ function drawTop(){
 function drawPad(){
   const cv=$('pc');if(!cv)return;const x=prep(cv),l=cur(),rec=strokesOf(l.g);
   paper(x);
-  if(S.scr==='lab'){glyph(x,l.g,'#8c7f55',.28);if(rec&&!S.strokes.length){ink(x,rec,'rgba(184,48,109,.35)',5);dots(x,rec,'rgba(184,48,109,.8)')}ink(x,S.strokes,'#2d2a6e',PEN);if(S.strokes.length)dots(x,S.strokes,'#b8306d',6);return}
+  if(S.scr==='lab'){glyph(x,l.g,'#8c7f55',.28);if(rec&&!S.strokes.length){ink(x,rec,'rgba(184,48,109,.3)',5);arrows(x,rec,'rgba(184,48,109,.8)')}ink(x,S.strokes,'#2d2a6e',PEN);if(S.strokes.length)dots(x,S.strokes,'#b8306d',6);return}
   if(S.res){glyph(x,l.g,S.mode==='free'||S.mode==='recall'?'#2f8f4f':'#2f8f4f',S.mode==='free'||S.mode==='recall'?.18:.32)}
-  else if(S.mode==='trace'){glyph(x,l.g,'#8c7f55',.24);if(rec)dots(x,rec,'#b8306d')}
-  else if(S.mode==='ghost'){glyph(x,l.g,'#8c7f55',.06);if(rec)dots(x,rec,'#b8306d')}
+  else if(S.mode==='trace'){glyph(x,l.g,'#8c7f55',.24);if(rec)arrows(x,rec,'rgba(184,48,109,.85)')}
+  else if(S.mode==='ghost'){glyph(x,l.g,'#8c7f55',.06);if(rec)arrows(x,rec,'rgba(184,48,109,.6)',48)}
   ink(x,S.strokes,'#2d2a6e',PEN);
 }
 function watch(){
@@ -632,7 +647,7 @@ function watch(){
       for(let j=1;j<s.length;j++){const sd=dist(s[j-1],s[j]);if(d+sd>=want){const r=(want-d)/sd;part.push([s[j-1][0]+(s[j][0]-s[j-1][0])*r,s[j-1][1]+(s[j][1]-s[j-1][1])*r]);break}d+=sd;part.push(s[j])}
       shown.push(part);acc+=dur+GAP;
     }
-    ink(x,shown,'#0f380f',10);dots(x,shown.map((p,i)=>rec[i]),'#b8306d',7);
+    ink(x,shown,'#0f380f',10);shown.forEach(p=>{if(p.length>1){const e=p.at(-1),f=p[Math.max(0,p.length-3)],a=Math.atan2(e[1]-f[1],e[0]-f[0]);x.fillStyle='#b8306d';x.beginPath();x.moveTo(e[0]+Math.cos(a)*9,e[1]+Math.sin(a)*9);x.lineTo(e[0]+Math.cos(a+2.5)*9,e[1]+Math.sin(a+2.5)*9);x.lineTo(e[0]+Math.cos(a-2.5)*9,e[1]+Math.sin(a-2.5)*9);x.fill()}else{x.fillStyle='#0f380f';x.beginPath();x.arc(p[0][0],p[0][1],6,0,7);x.fill()}});
     if(t<total+1.2)anim=requestAnimationFrame(frame);else{anim=0;drawTop()}
   };
   anim=requestAnimationFrame(frame);
