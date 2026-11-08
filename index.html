@@ -464,7 +464,7 @@ const HELP=[
   ['MODES',`<div><b>TRACE</b>write over the letter</div><div><b>GHOST</b>faint outline only</div><div><b>FREE</b>copy it, any size</div><div><b>RECALL</b>hear it, write from memory</div>`],
   ['SCORING',`<div>Your ink is compared with the letter's shape. <b>ON SHAPE</b> = ink on the letter. <b>COVERED</b> = how much of the letter you drew.</div><div>★ 60+ · ★★ 75+ · ★★★ 90+. FREE or RECALL at 75+ masters a letter.</div>`],
   ['STROKE ORDER',`<div>Record a letter's strokes in <b>STROKE LAB</b>, in order and direction. That letter then gets an ORDER animation, numbered start dots, and stroke checks.</div><div>DATA exports the strokes as JSON.</div>`],
-  ['CONTROLS',`<div><b>A</b>check · next  <b>B</b>back</div><div><b>Y</b>clear  <b>X</b>watch order</div><div><b>◀▶</b>change letter</div><div><b>SELECT</b>hear  <b>START</b>random 10</div>`],
+  ['CONTROLS',`<div><b>A</b>check · next  <b>B</b>back</div><div><b>Y</b>clear  <b>X</b>watch order</div><div><b>&lt;&gt;</b>change letter</div><div><b>SELECT</b>hear  <b>START</b>random 10</div>`],
 ];
 const S={scr:'boot',power:true,hp:0,mi:0,pi:0,mode:'trace',q:[],qi:0,strokes:[],res:null,sess:{},li:0};
 const cur=()=>S.scr==='lab'?ALL[S.li]:S.q[S.qi];
@@ -485,10 +485,10 @@ const R={
   help(){
     const [h,body]=HELP[S.hp];
     return{
-      top:`<div class="v"><div class="hdr"><span>HOW TO PLAY</span><span>${S.hp+1}/${HELP.length}</span></div><div class="hp"><div class="ps" style="font-size:4cqw">${h}</div>${body}</div><div class="ft">◀ ▶ PAGE · B BACK</div></div>`,
+      top:`<div class="v"><div class="hdr"><span>HOW TO PLAY</span><span>${S.hp+1}/${HELP.length}</span></div><div class="hp"><div class="ps" style="font-size:4cqw">${h}</div>${body}</div><div class="ft">&lt; &gt; PAGE · B BACK</div></div>`,
       bot:`<div class="bv"><div class="mdesc" style="color:var(--ink);text-align:center;align-items:center"><div class="gu" style="font-size:22cqw;line-height:1">${['ક','ખ','ગ','ઘ','ચ'][S.hp]}</div></div>
-        <div class="row" style="flex:none;height:12cqw"><div class="bt" data-act="hprev">◀ PREV</div><div class="bt" data-act="hnext">NEXT ▶</div></div>
-        <div class="row" style="flex:none;height:11cqw"><div class="bt" data-act="tomenu">◀ MENU</div></div></div>`
+        <div class="row" style="flex:none;height:12cqw"><div class="bt" data-act="hprev">&lt; PREV</div><div class="bt" data-act="hnext">NEXT &gt;</div></div>
+        <div class="row" style="flex:none;height:11cqw"><div class="bt" data-act="tomenu">&lt; MENU</div></div></div>`
     };
   },
   title(){
@@ -524,7 +524,7 @@ const R={
         <div class="ft">A START HERE · START RANDOM 10 · B BACK</div></div>`,
       bot:`<div class="bv"><div class="grid">${p.map((x,i)=>`<div class="cell${traced(x)?' t':''}${mastered(x)?' m':''}${i===S.pi?' on':''}" data-act="cell" data-i="${i}">${x.g}${abKnown(x)?'<i class="ab"></i>':''}${strokesOf(x.g)?'<span class="sd">≈</span>':''}</div>`).join('')}</div>
         <div class="legend"><span><i style="border:.4cqw solid var(--ink)"></i>TRACED</span><span><i style="background:#d9e8a6"></i>MASTERED</span><span><i style="background:var(--mag);border-radius:50%"></i>AKSHAR BOY</span><span style="color:var(--mag)">≈ STROKES</span></div>
-        <div class="row" style="flex:none;height:11cqw"><div class="bt" data-act="back">◀ MENU</div><div class="bt" data-act="random">RANDOM 10 ▶</div></div></div>`,
+        <div class="row" style="flex:none;height:11cqw"><div class="bt" data-act="back">&lt; MENU</div><div class="bt" data-act="random">RANDOM 10 &gt;</div></div></div>`,
       after(){drawPick(l)}
     };
   },
@@ -544,8 +544,8 @@ const R={
         ${S.mode==='recall'?'<div class="iss">SELECT = HEAR AGAIN</div>':rec?'<div class="iss">X = WATCH STROKE ORDER</div>':''}`;
     }
     const done=Object.keys(S.sess).length;
-    const tools=r?[['next','NEXT ▶','A',1],['retry','RETRY','Y'],['hear','HEAR','SEL'],['watch','ORDER','X'],['back','LETTERS','B']]
-                 :[['check','CHECK','A',1],['undo','UNDO','⌫'],['clear','CLEAR','Y'],['hear','HEAR','SEL'],...(S.mode==='recall'?[['back','LETTERS','B']]:[['watch','ORDER','X']])];
+    const tools=r?[['next','NEXT &gt;','A',1],['retry','RETRY','Y'],['hear','HEAR','SEL'],['watch','ORDER','X'],['back','LETTERS','B']]
+                 :[['check','CHECK','A',1],['undo','UNDO','BKSP'],['clear','CLEAR','Y'],['hear','HEAR','SEL'],...(S.mode==='recall'?[['back','LETTERS','B']]:[['watch','ORDER','X']])];
     return{
       top:`<div class="v"><div class="hdr"><span>${m.n}</span><span>${S.qi+1}/${S.q.length}${done?` · ✓${done}`:''}</span></div>
         <div class="body"><canvas class="tc" id="tc"></canvas><div class="info">${info}</div></div></div>`,
@@ -562,9 +562,9 @@ const R={
         <div class="iss">DRAW EACH STROKE IN ORDER, IN THE DIRECTION YOU WRITE IT. SAVE WITH A. AN EMPTY SAVE DELETES.</div>
         <div class="iss">${n} RECORDED HERE</div></div></div></div>`,
       bot:`<div class="pad"><canvas id="pc"></canvas><div class="tools">
-        <div class="bt pri" data-act="lsave">SAVE<span class="k">A</span></div><div class="bt" data-act="undo">UNDO<span class="k">⌫</span></div>
+        <div class="bt pri" data-act="lsave">SAVE<span class="k">A</span></div><div class="bt" data-act="undo">UNDO<span class="k">BKSP</span></div>
         <div class="bt" data-act="clear">CLEAR<span class="k">Y</span></div>
-        <div class="row" style="gap:1cqw"><div class="bt" data-act="lprev">◀</div><div class="bt" data-act="lnext">▶</div></div>
+        <div class="row" style="gap:1cqw"><div class="bt" data-act="lprev">&lt;</div><div class="bt" data-act="lnext">&gt;</div></div>
         <div class="bt" data-act="data">DATA<span class="k">SEL</span></div><div class="bt" data-act="back">MENU<span class="k">B</span></div></div></div>`,
       after(){drawTop();drawPad();bindPad();if(rec)later(()=>watch(),300)}
     };
@@ -576,7 +576,7 @@ const R={
         <textarea class="data" id="dta" spellcheck="false">${JSON.stringify(REC)}</textarea></div>`,
       bot:`<div class="bv"><div class="mdesc" style="font-size:5cqw;color:var(--ink);flex:none">Copy this JSON to keep it, or paste it into the BUILTIN constant in index.html to ship it with the game. To load data, paste it above and tap IMPORT.</div>
         <div class="row"><div class="bt" data-act="copy">COPY</div><div class="bt" data-act="import">IMPORT</div></div>
-        <div class="row"><div class="bt" data-act="back">◀ BACK</div></div></div>`
+        <div class="row"><div class="bt" data-act="back">&lt; BACK</div></div></div>`
     };
   },
   done(){
@@ -585,7 +585,7 @@ const R={
       top:`<div class="v"><div class="hdr"><span>RESULTS</span><span>${MODES.find(x=>x.k===S.mode).n}</span></div>
         <div class="mdesc" style="align-items:center;text-align:center"><div class="big">AVG ${avg}</div><div class="stars" style="font-size:9cqw">${starStr(st)}</div><div>${gn} · ${e.length} letters</div></div></div>`,
       bot:`<div class="bv"><div class="sum">${e.map(([i,s])=>`<div><span class="gu" style="color:var(--ink)">${S.q[i].g}</span>${s}</div>`).join('')}</div>
-        <div class="row" style="flex:none;height:12cqw"><div class="bt" data-act="random">AGAIN ▶</div><div class="bt" data-act="tomenu">MENU</div></div></div>`
+        <div class="row" style="flex:none;height:12cqw"><div class="bt" data-act="random">AGAIN &gt;</div><div class="bt" data-act="tomenu">MENU</div></div></div>`
     };
   }
 };
